@@ -1,0 +1,149 @@
+# Access Control
+
+*Designed to prevent users from interacting with data or functionality for which they don’t have the relevant permission*
+
+### **Access Control bugs:**
+
+- These bugs can potentially allow unauthorized users to gain access to sensitive information or perform actions they shouldn't be able to
+- **Inadequate Authentication:**
+    - Weak Passwords: Vulnerability due to easily guessable passwords.
+    - Brute Force Attacks: Lack of protection against systematic password guessing.
+- **Insufficient Authorization:**
+    - [Privilege Escalation](https://www.notion.so/Access-Control-e2eb05a483b74ed7bc31c2931ca51fdf?pvs=21): Unauthorized users gaining higher-level access.
+    - Missing Role-Based Access Controls (RBAC): Failure to implement proper role-based permissions.
+- **Insecure Direct Object References (IDOR):**
+    - Improper Input Validation: Lack of validation leading to unauthorized object references.
+    - Predictable Resource Locations: Attackers exploiting predictable resource URLs.
+- **File Permission Issues:**
+    - Incorrect File Permissions: Incorrectly set permissions allowing unauthorized access.
+    - World-Readable or World-Writable Files: Files accessible or modifiable by any user.
+- **Insecure Session Management:**
+    - Session Fixation: Allowing attackers to set known session IDs.
+    - Session Sidejacking: Attackers intercepting or hijacking session tokens.
+- **Insecure API Access Controls:**
+    - Missing or Weak API Authentication: Lack of proper authentication mechanisms.
+    - Insufficient API Authorization: APIs allowing unauthorized resource access.
+- **Misconfigured Security Settings:**
+    - Default Settings: Security risks from unchanged default settings.
+    - Overly Permissive Settings: Granting excessive privileges to users or processes.
+- **Broken Access Control Chains:**
+    - Unintended Chaining of Permissions: Unauthorized access due to unintended combinations.
+
+## **Web Sec module walkthrough:**
+
+### **Vertical privilege escalation:**
+
+If a user can gain access to functionality that they are not permitted to access. Ex: non admin user can get access to an admin page.
+
+*Unprotected functionality:* 
+
+- Arrises where an application does not enforce any protection for sensitive functionality
+- user being able to access admin page link
+- In some cases, admin URL is disclosed in robots.txt file
+- Even if the URL isn't disclosed anywhere, an attacker may be able to use a wordlist to brute-force the location of the sensitive functionality.
+
+*Case of protected /concealed URL being exposed:*
+
+- Some cases URL are concealed by giving less predictable URL( Security by obscurity )
+- This does not provide any help in hiding sensitive functionality because there are numerous ways to find the URL if it is not protected.
+    
+    Link: [https://insecure-website.com/administrator-panel-yb556](https://insecure-website.com/administrator-panel-yb556)
+    
+    <aside>
+    💡 Not easily guessable but the application might still leak the URL. The URL might be disclosed on JS that constructs the user interface based on the use-role.
+    
+    </aside>
+    
+    ```jsx
+    <script>
+    	var isAdmin = false;
+    	if (isAdmin) {
+    		...
+    		var adminPanelTag = document.createElement('a');
+    		adminPanelTag.setAttribute('https://insecure-website.com/administrator-panel-yb556');
+    		adminPanelTag.innerText = 'Admin panel';
+    		...
+    	}
+    </script>
+    ```
+    
+
+### **Parameter-based Access Control Methods**
+
+- Applications determine’s user access on the basis of parameters being used:
+    
+    **Parameters:**
+    
+    > Role based
+    > 
+    
+    > geography
+    > 
+    
+    > time of access
+    > 
+    
+    > device type
+    > 
+- Stores information in a user-controllable location
+    - Hidden Field
+    - Cookie
+    - A preset query string parameter
+    
+    **Vulnerability Example:**
+    
+    ```jsx
+    https://insecure-website.com/login/home.jsp?admin=true
+    https://insecure-website.com/login/home.jsp?role=1
+    ```
+    
+    - Application making access control decision based on submitted value. admin=true, role =1
+    - Insecure because a user can modify the value and access the functionality they are not authorized to.
+
+[**Lab: User role controlled by request parameter**](https://www.notion.so/Lab-User-role-controlled-by-request-parameter-2b4d693fc70c449c978f1a1d73214399?pvs=21)
+
+### **Horizontal Privilege escalation**
+
+- User being able to access resources belonging to another user, instead of their own resources type.
+- Employe can access the records of other employees as well as their own
+- Might use similar exploit methods to vertical privilege escalation.
+
+**Vulnerability Example:** 
+
+```jsx
+https://insecure-website.com/myaccount?id=123
+```
+
+**Exploiting methods:**
+
+- modifying id parameter value to that of another user
+- Some application with non predictable value. Ex: App using Globally Unique Identifiers (GUIDs) to identify user might be disclosed elsewhere in the app where users are referenced (user messages/reviews)
+
+**Vulnerability type:** 
+
+- IDOR(Insecure direct object reference ) : user controller parameter values are used to access resources or function directly
+
+[**Lab: User ID controlled by request parameter, with unpredictable user IDs**](https://www.notion.so/Lab-User-ID-controlled-by-request-parameter-with-unpredictable-user-IDs-445ce5db4c384d45a629742b02ac43b6?pvs=21)
+
+### Horizontal to vertical privilege escalation
+
+Horizontal privilege escalation attack can be turned into vertical by compromising more privileged user.
+
+- Horizontal escalation might allow an attacker to reset/capture the password belonging to another user
+- Attacker targeting admin user and compromising their account to perform vertical escalation
+
+**Vulnerability Example:**
+
+```jsx
+https://insecure-website.com/myaccount?id=456
+```
+
+**Exploiting Methods:**
+
+- Parameter tampering techniques
+
+[**Lab: User ID controlled by request parameter with password disclosure**](https://www.notion.so/Lab-User-ID-controlled-by-request-parameter-with-password-disclosure-b4aa8746783946cc8c6184aca3c8697c?pvs=21)
+
+**Remedies:**
+
+To prevent access control bugs, developers and system administrators should follow secure coding practices, conduct thorough security reviews, implement proper authentication and authorization mechanisms, and regularly audit and monitor access controls in the system.
